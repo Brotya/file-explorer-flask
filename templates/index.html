@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Explorer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>File/Directory Explorer</h1>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Breadcrumb Navigation -->
+        <div class="breadcrumb">
+            <a href="{{ url_for('index') }}">Home</a>
+            {% for crumb in breadcrumbs %}
+                / <a href="{{ url_for('index', dir=crumb.path) }}">{{ crumb.name }}</a>
+            {% endfor %}
+        </div>
+
+        <!-- Actions -->
+        <div class="actions">
+            <form method="POST" action="{{ url_for('make_dir') }}" class="inline-form">
+                <input type="hidden" name="current_dir" value="{{ current_dir }}">
+                <input type="text" name="dir_name" placeholder="New folder name" required>
+                <button type="submit">Create Folder</button>
+            </form>
+
+            <form method="POST" action="{{ url_for('make_file') }}" class="inline-form">
+                <input type="hidden" name="current_dir" value="{{ current_dir }}">
+                <input type="text" name="file_name" placeholder="New file name" required>
+                <button type="submit">Create File</button>
+            </form>
+        </div>
+
+        <!-- File/Directory Listing -->
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th>Size</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if not items %}
+                    <tr>
+                        <td colspan="4" style="text-align: center;">This folder is empty</td>
+                    </tr>
+                {% endif %}
+
+                {% for item in items %}
+                <tr>
+                    <td>
+                        {% if item.is_dir %}
+                            📁 <a href="{{ url_for('index', dir=item.path) }}">{{ item.name }}</a>
+                        {% else %}
+                            📄 {{ item.name }}
+                        {% endif %}
+                    </td>
+                    <td>{{ "Folder" if item.is_dir else "File" }}</td>
+                    <td>{{ item.size }}</td>
+                    <td>
+                        {% if item.is_dir %}
+                            <form method="POST" action="{{ url_for('remove_dir') }}" style="display:inline;">
+                                <input type="hidden" name="current_dir" value="{{ current_dir }}">
+                                <input type="hidden" name="dir_path" value="{{ item.path }}">
+                                <button type="submit" class="btn-danger" onclick="return confirm('Remove this folder?')">Delete</button>
+                            </form>
+                        {% else %}
+                            <a href="{{ url_for('view_file', file_path=item.path, current_dir=current_dir) }}" class="btn-info">View</a>
+                            <form method="POST" action="{{ url_for('remove_file') }}" style="display:inline;">
+                                <input type="hidden" name="current_dir" value="{{ current_dir }}">
+                                <input type="hidden" name="file_path" value="{{ item.path }}">
+                                <button type="submit" class="btn-danger" onclick="return confirm('Delete this file?')">Delete</button>
+                            </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
